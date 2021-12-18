@@ -5,10 +5,13 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
 import { FirebaseContext } from '../../firebase/index';
-import { useNavigate } from 'react-router-dom';
+
 import FileUploader from 'react-firebase-file-uploader'
 
-const NuevoPlatillo = () =>{
+const ModificarPlato = ({setModificar, modificar, idModificar, infoModificar}) =>{
+
+    const {nombre, precio, categoria, descripcion, image, existencia, id } = infoModificar.plato; 
+
 
     // states para las imagenes
 
@@ -16,25 +19,20 @@ const NuevoPlatillo = () =>{
 
     const [progreso, setProgreso] = useState(0)
 
-    const [urlimagen, setUrlimagen] = useState('')
+    const [urlimagen, setUrlimagen] = useState(image)
 
     // context con las operaciones de firebase
 
     const {firebase} = useContext(FirebaseContext)
 
-
-    // hook para redireccionar
-
-    const navigate = useNavigate();
-
     // validacion y leer datos de formulario
 
     const formik = useFormik({
         initialValues:{
-            nombre:'',
-            precio: '',
-            categoria:'',
-            descripcion:'',
+            nombre:nombre,
+            precio: precio,
+            categoria:categoria,
+            descripcion: descripcion,
         },
 
 
@@ -60,19 +58,24 @@ const NuevoPlatillo = () =>{
         }),
 
         onSubmit: plato =>{
-            try {
-                plato.existencia= true;
-                plato.image = urlimagen;
-                firebase.db.collection('productos').add(plato)
 
-                navigate('/menu');
-                
+            // evita ejecutarse mientras se está cragando la imagen
+            if (!subiendo){
+            try {
+                plato.existencia= existencia;
+                plato.image = urlimagen;
+                firebase.db.collection('productos').doc(id).update(plato)
+                               
             } catch (error) {
                 console.log(error)
-            }
+            } 
+
+           setModificar(!modificar)}
         }
 
     })
+
+    
 
 // Todo sobre las imagenes
 
@@ -98,14 +101,13 @@ const handleUploadSuccess = async nombre =>{
 
     setUrlimagen(url)
 
-    console.log(url)  
 }
        
 
     return(
         <>
         
-        <h1 className="text-3xl font-light mb-4 w-full text-center"> Agregar Plato </h1>
+        <h1 className="text-3xl font-light mb-4 w-full text-center"> Modificar Plato </h1>
 
         <div className="flex justify-center mt-10">
 
@@ -187,7 +189,7 @@ const handleUploadSuccess = async nombre =>{
                         </div>
                     ) : null}
 
-                    <div className="mb-4 overflow-hidden">
+                    <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="imagen">Imagen</label>
 
                         <FileUploader
@@ -198,8 +200,7 @@ const handleUploadSuccess = async nombre =>{
                         storageRef = {firebase.storage.ref('productos')}
                         onUploadStart={handleUploadStart}
                         onUploadError={handleUploadError}
-                        onUploadSuccess={handleUploadSuccess}
-                        className=" font-thin  "                       
+                        onUploadSuccess={handleUploadSuccess}                       
                         />
 
                     </div>
@@ -212,9 +213,9 @@ const handleUploadSuccess = async nombre =>{
 
                     {subiendo ? (
                         <div className="mb-5 text-sm bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2" role="alert">
-                           <p className="font-bold"> Cargando imagen</p>
+                           <p className="font-bold"> Cargando imagen ...</p>
                         </div>
-                    ) : null}           
+                    ) : null} 
 
 
                     <div className="mb-4">
@@ -243,13 +244,14 @@ const handleUploadSuccess = async nombre =>{
                     <input 
                     type="submit"
                     className=" bg-gray-800 w-full mt-5 p-2 text-white uppercase font-bold hover:bg-gray-900 hover:text-yellow-500"
-                    value="agregar plato"/>
+                    value="modificar plato"/>
 
                     <button 
                     
                     className=" bg-red-800 w-full mt-5 p-2 text-white uppercase font-bold hover:bg-gray-900 hover:text-yellow-500"
-                    onClick={()=>navigate('/menu')}
+                    onClick={()=>setModificar(!modificar)}
                     > cancelar </button>
+                    
 
                 </form>
             </div>
@@ -260,4 +262,4 @@ const handleUploadSuccess = async nombre =>{
 
 };
 
-export default NuevoPlatillo;
+export default ModificarPlato;
